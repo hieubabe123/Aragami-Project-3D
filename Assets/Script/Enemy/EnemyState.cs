@@ -4,7 +4,7 @@ using UnityEngine;
 public enum EnemyStateTypes
 {
     Patrolling,
-    Alerting,
+    Suspecting,
     AlertingAllEnemy,
     Chasing,
     Attacking,
@@ -23,29 +23,25 @@ public class EnemyState : MonoBehaviour
     private Transform _playerDetectionTarget;
     private CapsuleCollider _capsuleCollider;
     private EnemyIcons _icons;
+    [SerializeField] private EnemyScriptableObject EnemyDataSO;
 
     [Header("-------------- GameObject Children")]
     [SerializeField] private Transform hornSpeakerPos;
     [SerializeField] private Transform bodyHoldHornSpeakerPos;
     [SerializeField] private Transform handHoldHornSpeakerPos;
 
-
     [Header("Timers & Durations & Distances")]
-    [SerializeField] private float alertDuration = 3f;
-    [SerializeField] private float searchDuration = 7f;
-    [SerializeField] private float attackCooldown = 2f;
-    [SerializeField] private float attackLeash = 1.2f;
 
     // Biến nội bộ
     private float _currentStateTimer;
     private float _lastAttackTime = -999f;
-    private float rotationSpeed = 5f;
-    private float _timeToAlertAllEnemies = 5f;
     private Vector3 _lastKnownPlayerPosition;
     private bool isDead;
     private bool _isLocked;
     private bool _isHostile;
-    private bool _isAlertedByAllEnemy;
+    private bool _isAlertingInProgress = false;
+    private Coroutine _alertCoroutine;
+    public bool isAlertedByAllEnemy = false;
 
     private void Awake()
     {
@@ -66,24 +62,30 @@ public class EnemyState : MonoBehaviour
         EventDispatcher.RemoveListener<EventDefine.OnAlertAllEnemy>(HandleAlertAllEnemy);
     }
 
-    private void HandleAlertAllEnemy(EventDefine.OnAlertAllEnemy onAlert)
+    private void HandleAlertAllEnemy(EventDefine.OnAlertAllEnemy onEnemyAlert)
     {
+        if (isAlertedByAllEnemy) return;
+        isAlertedByAllEnemy = true;
 
+        // Nếu đang trong trạng thái bình thường, chuyển sang hostile
+        if (currentState == EnemyStateTypes.Patrolling || currentState == EnemyStateTypes.Suspecting)
+        {
+            _isHostile = true;
+        }
     }
 
     void Start()
     {
         isDead = false;
         _isHostile = false;
+
         if (_enemyMovement.patrolPoints.Length > 0)
         {
-            currentState = EnemyStateTypes.Patrolling;
-            _enemyMovement.StartPatrolling();
+            SetState(EnemyStateTypes.Patrolling);
         }
         else
         {
-            currentState = EnemyStateTypes.Patrolling;
-            _enemyMovement.StopMovement();
+            SetState(EnemyStateTypes.Patrolling);
         }
     }
 
@@ -93,9 +95,11 @@ public class EnemyState : MonoBehaviour
         {
             return;
         }
-        if (_fov.visibleDetectionTargets.Count > 0)
+
+        // Cập nhật player detection
+        if (_fov.HasTargetInDetection())
         {
-            _playerDetectionTarget = _fov.visibleDetectionTargets[0];
+            _playerDetectionTarget = _fov.GetClosestDetectionTarget();
             _lastKnownPlayerPosition = _playerDetectionTarget.position;
         }
         else
@@ -103,13 +107,17 @@ public class EnemyState : MonoBehaviour
             _playerDetectionTarget = null;
         }
 
+        // Xử lý state machine
         switch (currentState)
         {
             case EnemyStateTypes.Patrolling:
                 HandlePatrolState();
                 break;
-            case EnemyStateTypes.Alerting:
-                HandleAlertedState();
+            case EnemyStateTypes.Suspecting:
+                HandleSuspectingState();
+                break;
+            case EnemyStateTypes.AlertingAllEnemy:
+                HandleAlertingAllEnemyState();
                 break;
             case EnemyStateTypes.Chasing:
                 HandleChaseState();
@@ -117,87 +125,90 @@ public class EnemyState : MonoBehaviour
             case EnemyStateTypes.Attacking:
                 HandleAttackState();
                 break;
-            case EnemyStateTypes.AlertingAllEnemy:
-                HandleAlertedState();
-                break;
             case EnemyStateTypes.Dead:
                 break;
         }
+
         HandleRotation();
     }
 
     private void HandleRotation()
     {
+        // Chỉ xoay khi không đang trong trạng thái patrol hoặc dead
+        if (currentState == EnemyStateTypes.Patrolling || currentState == EnemyStateTypes.Dead)
+            return;
+
         Vector3 lookPosition;
 
         // Quyết định xem nên nhìn vào đâu dựa trên state hiện tại
-        if (currentState == EnemyStateTypes.Alerting || currentState == EnemyStateTypes.Chasing || currentState == EnemyStateTypes.Attacking)
-        {
-            if (_playerDetectionTarget != null)
-                lookPosition = _playerDetectionTarget.position;
-            else
-                lookPosition = _lastKnownPlayerPosition;
-        }
+        if (_playerDetectionTarget != null)
+            lookPosition = _playerDetectionTarget.position;
         else
+            lookPosition = _lastKnownPlayerPosition;
+
+        // Thực hiện xoay mượt mà (chỉ khi không đang chase - vì chase đã có rotation riêng)
+        if (currentState != EnemyStateTypes.Chasing)
         {
+            Vector3 direction = (lookPosition - transform.position).normalized;
+            direction.y = 0;
+            if (direction != Vector3.zero)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(direction);
+                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, EnemyDataSO.RotationSpeed * Time.deltaTime);
+            }
+        }
+    }
+
+    private void HandlePatrolState()
+    {
+        // Nếu được alert bởi enemy khác và thấy player
+        if (isAlertedByAllEnemy && _playerDetectionTarget != null)
+        {
+            _isHostile = true;
+            SetState(EnemyStateTypes.Chasing);
             return;
         }
 
-        // Thực hiện xoay mượt mà
-        Vector3 direction = (lookPosition - transform.position).normalized;
-        direction.y = 0;
-        if (direction != Vector3.zero)
+        // Nếu thấy player lần đầu
+        if (_playerDetectionTarget != null)
         {
-            Quaternion targetRotation = Quaternion.LookRotation(direction);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+            SetState(EnemyStateTypes.Suspecting);
+            return;
         }
     }
 
-    // HÀM NÀY BÂY GIỜ CHỈ KIỂM TRA ĐIỀU KIỆN
-    private void HandlePatrolState()
+    private void HandleSuspectingState()
     {
-        if (_isHostile && _fov.visibleDetectionTargets.Count > 0)
-        {
-            if (!_isAlertedByAllEnemy)
-            {
-                SetState(EnemyStateTypes.AlertingAllEnemy);
-            }
-            else
-            {
-                SetState(EnemyStateTypes.Chasing);
-            }
-        }
-        else if (_playerDetectionTarget != null)
-        {
-            SetState(EnemyStateTypes.Alerting);
-        }
-    }
+        _currentStateTimer += Time.deltaTime;
 
-    private void HandleAlertedState()
-    {
-        _enemyMovement.StopMovement();
         if (_playerDetectionTarget != null) // Nếu vẫn đang thấy người chơi
         {
-            _currentStateTimer += Time.deltaTime;
-
-
-            if (_currentStateTimer >= alertDuration)
+            if (_currentStateTimer >= EnemyDataSO.SuspectDuration)
             {
                 _isHostile = true;
-                if (_fov.visibleAttackTargets.Count > 0)
+
+                // Nếu chưa alert và chưa bị alert bởi người khác
+                if (!isAlertedByAllEnemy && !_isAlertingInProgress)
                 {
-                    SetState(EnemyStateTypes.Attacking);
+                    SetState(EnemyStateTypes.AlertingAllEnemy);
                 }
-                else if (_fov.visibleDetectionTargets.Count > 0 && _fov.visibleAttackTargets.Count == 0)
+                else
                 {
-                    SetState(EnemyStateTypes.Chasing);
+                    // Đã được alert hoặc đang alert, chuyển thẳng sang chasing/attacking
+                    if (_fov.HasTargetInAttackRange())
+                    {
+                        SetState(EnemyStateTypes.Attacking);
+                    }
+                    else
+                    {
+                        SetState(EnemyStateTypes.Chasing);
+                    }
                 }
             }
         }
         else // Nếu đã mất dấu người chơi
         {
-            _currentStateTimer += Time.deltaTime;
-            if (_currentStateTimer >= searchDuration)
+            if (_currentStateTimer >= EnemyDataSO.SearchDuration)
             {
                 _isHostile = false;
                 SetState(EnemyStateTypes.Patrolling);
@@ -205,16 +216,24 @@ public class EnemyState : MonoBehaviour
         }
     }
 
+    private void HandleAlertingAllEnemyState()
+    {
+        // State này sẽ được kết thúc bởi animation event hoặc coroutine
+        // Không cần xử lý gì thêm ở đây
+    }
+
     private void HandleChaseState()
     {
         if (_playerDetectionTarget == null)
         {
-            SetState(EnemyStateTypes.Alerting);
+            SetState(EnemyStateTypes.Suspecting);
             return;
         }
+
         _isHostile = true;
         _enemyMovement.ChaseTarget(_playerDetectionTarget);
-        if (_fov.visibleAttackTargets.Count > 0)
+
+        if (_fov.HasTargetInAttackRange())
         {
             SetState(EnemyStateTypes.Attacking);
         }
@@ -222,48 +241,76 @@ public class EnemyState : MonoBehaviour
 
     private void HandleAttackState()
     {
-        _enemyMovement.StopMovement();
-
         // ĐIỀU KIỆN THOÁT MỚI: Chỉ quay lại Chasing nếu Player ở xa hơn (attackRadius * attackLeash)
-        if (_playerDetectionTarget == null || Vector3.Distance(transform.position, _playerDetectionTarget.position) > _fov.attackRadius * attackLeash)
+        if (_playerDetectionTarget == null || Vector3.Distance(transform.position, _playerDetectionTarget.position) > _fov.attackRadius * EnemyDataSO.AttackLeash)
         {
             SetState(EnemyStateTypes.Chasing);
             return;
         }
 
         // Luôn nhìn về phía Player khi tấn công
-        transform.LookAt(_playerDetectionTarget);
+        if (_playerDetectionTarget != null)
+        {
+            Vector3 direction = (_playerDetectionTarget.position - transform.position).normalized;
+            direction.y = 0;
+            if (direction != Vector3.zero)
+            {
+                transform.rotation = Quaternion.LookRotation(direction);
+            }
+        }
 
-        if (Time.time >= _lastAttackTime + attackCooldown)
+        if (Time.time >= _lastAttackTime + EnemyDataSO.AttackCooldown)
         {
             _lastAttackTime = Time.time;
             _animator.ExecuteAttackAnimation();
         }
     }
 
-    private void HandleAlertAllEnemy()
+    private IEnumerator AlertAllEnemyCoroutine()
     {
-        _enemyMovement.StopMovement();
-        _timeToAlertAllEnemies -= Time.deltaTime;
-        if (_timeToAlertAllEnemies <= 0f)
+        _isAlertingInProgress = true;
+
+        // Chờ animation hoàn thành (có thể điều chỉnh thời gian này)
+        yield return new WaitForSeconds(2f);
+
+        _isAlertingInProgress = false;
+        _alertCoroutine = null;
+
+        // Sau khi hoàn thành alert, quyết định state tiếp theo
+        if (_playerDetectionTarget != null)
         {
-            _animator.ExecuteAlertAllEnemyAnimation();
+            if (_fov.HasTargetInAttackRange())
+            {
+                SetState(EnemyStateTypes.Attacking);
+            }
+            else
+            {
+                SetState(EnemyStateTypes.Chasing);
+            }
         }
-        EventDispatcher.Dispatch<EventDefine.OnAlertAllEnemy>();
+        else
+        {
+            SetState(EnemyStateTypes.Suspecting);
+        }
     }
 
-    // HÀM NÀY SẼ RA LỆNH CHO MOVEMENT
     public void SetState(EnemyStateTypes newState)
     {
         if (currentState == newState) return;
 
-        // Dừng hành động của state cũ trước khi chuyển
-        if (currentState == EnemyStateTypes.Patrolling)
+        // Cleanup state cũ
+        if (_alertCoroutine != null)
         {
-            _enemyMovement.StopMovement();
+            StopCoroutine(_alertCoroutine);
+            _alertCoroutine = null;
+            _isAlertingInProgress = false;
         }
 
+        EnemyStateTypes previousState = currentState;
         currentState = newState;
+
+        // Reset timer khi chuyển state
+        _currentStateTimer = 0f;
 
         // Bắt đầu hành động của state mới
         switch (currentState)
@@ -272,30 +319,46 @@ public class EnemyState : MonoBehaviour
                 _enemyMovement.StartPatrolling();
                 _icons.ShowQuestionMarkIcon();
                 break;
-            case EnemyStateTypes.Alerting:
+
+            case EnemyStateTypes.Suspecting:
                 _enemyMovement.StopMovement();
-                _icons.ShowExclamationMarkIcon();
-                _currentStateTimer = 0f;
-                break;
-            case EnemyStateTypes.AlertingAllEnemy:
-                _enemyMovement.StopMovement();
-                _icons.ShowExclamationMarkIcon();
-                _currentStateTimer = 0f;
-                _isAlertedByAllEnemy = true;
-                HandleAlertAllEnemy();
-                break;
-            case EnemyStateTypes.Attacking:
-                _icons.ShowAttackMarkIcon();
-                break;
-            case EnemyStateTypes.Chasing:
                 _icons.ShowQuestionMarkIcon();
                 break;
+
+            case EnemyStateTypes.AlertingAllEnemy:
+                _enemyMovement.StopMovement();
+                _icons.ShowAlertAllEnemyIcon();
+
+                // Chỉ dispatch event nếu chưa được alert
+                if (!isAlertedByAllEnemy)
+                {
+                    EventDispatcher.Dispatch<EventDefine.OnAlertAllEnemy>();
+                    isAlertedByAllEnemy = true;
+                }
+
+                _animator.ExecuteAlertAllEnemyAnimation();
+                _alertCoroutine = StartCoroutine(AlertAllEnemyCoroutine());
+                break;
+
+            case EnemyStateTypes.Attacking:
+                _enemyMovement.StopMovement();
+                _icons.ShowAttackMarkIcon();
+                break;
+
+            case EnemyStateTypes.Chasing:
+                _icons.ShowExclamationMarkIcon();
+                // Không gọi movement ở đây vì sẽ được gọi trong HandleChaseState
+                break;
+
             case EnemyStateTypes.Dead:
                 Die();
                 _enemyMovement.SetNavMeshDisable();
                 break;
         }
+
+        Debug.Log($"Enemy {gameObject.name}: {previousState} -> {currentState}");
     }
+
     public void SetMovementLocked(bool isLocked)
     {
         this._isLocked = isLocked;
@@ -321,9 +384,19 @@ public class EnemyState : MonoBehaviour
 
     public void SetHandHoldHornSpeaker()
     {
-
         hornSpeakerPos.SetParent(handHoldHornSpeakerPos);
         hornSpeakerPos.localPosition = Vector3.zero;
         hornSpeakerPos.localRotation = Quaternion.identity;
+    }
+
+    // Getter cho EnemyAnimator để check trạng thái
+    public bool IsMoving()
+    {
+        return (currentState == EnemyStateTypes.Patrolling || currentState == EnemyStateTypes.Chasing) && !_isLocked && !isDead;
+    }
+
+    public EnemyStateTypes GetCurrentState()
+    {
+        return currentState;
     }
 }
