@@ -30,22 +30,11 @@ public class EventDefine
     public struct OnPlayerDead : IEventParam { }
     public struct OnBotDead : IEventParam { public GameObject GO; public bool IsEnemy; }
     public struct OnAlertAllEnemy : IEventParam { public bool IsAlertAllEnemy; }
-
+    public struct OnPlayerCanStealthKill : IEventParam { public bool CanStealthKill; }
     // Character selection & customization
+    public struct OnPlayerKilledEnemy : IEventParam { public StealthKillTrigger BotTrigger; }
 
-    public struct OnChangeCharacter : IEventParam
-    {
-        public int CharacterIdx;
-        public int CharacterClothIdx;
-        public ChangeType changeType;
-    }
-
-    public struct OnSelectCharacter : IEventParam
-    {
-        public int CharacterIdx;
-        public int CharacterClothIdx;
-        public ChangeType changeType;
-    }
+    public struct OnPlayerPickBook : IEventParam { }
 
     // ─────────────────────────────────────────
     //  UI & GAMEPLAY EVENTS

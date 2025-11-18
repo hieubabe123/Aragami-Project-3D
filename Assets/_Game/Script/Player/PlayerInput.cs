@@ -9,6 +9,8 @@ public class PlayerInput : MonoBehaviour
     private PlayerCrosshairController _playerCrosshairController;
     private PlayerStealthKill _playerStealthKill;
     private PlayerCreateShadow _playerCreateShadow;
+    [Header("------------------------Joystick Settings------------------------")]
+    [SerializeField] private FloatingJoystick floatingJoystick;
 
     [Header("------------------------Buttons Held States------------------------")]
     public bool runButtonHeld;
@@ -67,7 +69,14 @@ public class PlayerInput : MonoBehaviour
 
     public Vector2 GetMovementVectorNormalizedInput()
     {
-        moveInput = _inputActions.Player.Move.ReadValue<Vector2>().normalized;
+        if (floatingJoystick != null)
+        {
+            moveInput = new Vector2(floatingJoystick.Horizontal, floatingJoystick.Vertical).normalized;
+        }
+        else
+        {
+            moveInput = _inputActions.Player.Move.ReadValue<Vector2>().normalized;
+        }
         return moveInput;
     }
 
@@ -188,7 +197,70 @@ public class PlayerInput : MonoBehaviour
 
     }
 
+    #region Public Methods to Access Input Actions
+    public void OnTeleportButtonDown()
+    {
+        if (_playerMovement.isDead)
+        {
+            return;
+        }
+        if (_playerCrosshairController != null)
+        {
+            // Logic từ hàm StartAiming cũ
+            _playerCrosshairController.SetAiming(true);
+        }
+    }
 
+    public void OnTeleportButtonUp()
+    {
+        if (_playerMovement.isDead)
+        {
+            return;
+        }
 
+        if (_playerCrosshairController != null && _playerCrosshairController.CanTeleport)
+        {
+            Vector3 targetPosition = _playerCrosshairController.TeleportPosition;
+            _playerMovement.ExecuteTeleport(targetPosition);
+        }
+        if (_playerCrosshairController != null)
+        {
+            _playerCrosshairController.SetAiming(false);
+        }
+    }
+
+    public void OnCreateShadowButtonPressed()
+    {
+        if (_playerMovement.isDead) return;
+
+        if (_playerCreateShadow != null)
+        {
+            // Logic này được chuyển từ hàm CreateShadow(context) cũ
+            Vector3 targetPosition = new Vector3(_playerCrosshairController.ShadowCreatePosition.x, 0.3f, _playerCrosshairController.ShadowCreatePosition.z);
+            _playerCreateShadow.CreateShadowAt(targetPosition);
+        }
+    }
+
+    public void OnRunButtonDown()
+    {
+        runButtonHeld = true;
+    }
+
+    public void OnRunButtonUp()
+    {
+        runButtonHeld = false;
+    }
+
+    public void OnCrouchButtonDown()
+    {
+        crouchButtonHeld = true;
+    }
+
+    public void OnCrouchButtonUp()
+    {
+        crouchButtonHeld = false;
+    }
+
+    #endregion
 
 }

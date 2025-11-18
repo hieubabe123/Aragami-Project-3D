@@ -375,6 +375,7 @@ public class EnemyState : MonoBehaviour
 
     public void SetBodyHoldHornSpeaker()
     {
+        Debug.Log("Set body hold horn speaker");
         hornSpeakerPos.SetParent(bodyHoldHornSpeakerPos);
         hornSpeakerPos.localPosition = Vector3.zero;
         hornSpeakerPos.localRotation = Quaternion.identity;
@@ -382,6 +383,7 @@ public class EnemyState : MonoBehaviour
 
     public void SetHandHoldHornSpeaker()
     {
+        Debug.Log("Set hand hold horn speaker");
         hornSpeakerPos.SetParent(handHoldHornSpeakerPos);
         hornSpeakerPos.localPosition = Vector3.zero;
         hornSpeakerPos.localRotation = Quaternion.identity;

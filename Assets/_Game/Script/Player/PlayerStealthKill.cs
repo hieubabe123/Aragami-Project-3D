@@ -31,6 +31,7 @@ public class PlayerStealthKill : MonoBehaviour
     public void SetKillTarget(GameObject target)
     {
         _currentTarget = target;
+        EventDispatcher.Dispatch(new EventDefine.OnPlayerCanStealthKill { CanStealthKill = true });
     }
 
     public void ClearKillTarget(GameObject target)
@@ -38,6 +39,7 @@ public class PlayerStealthKill : MonoBehaviour
         if (_currentTarget != null)
         {
             _currentTarget = null;
+            EventDispatcher.Dispatch(new EventDefine.OnPlayerCanStealthKill { CanStealthKill = false });
         }
     }
 
@@ -85,6 +87,7 @@ public class PlayerStealthKill : MonoBehaviour
         rb.MoveRotation(targetRotation);
 
         enemyMovement.SetNavMeshDisable();
+        EventDispatcher.Dispatch(new EventDefine.OnPlayerKilledEnemy { BotTrigger = _currentTarget.GetComponent<StealthKillTrigger>() });
 
 
         yield return new WaitForSeconds(_withdrawingDuration);
@@ -99,6 +102,7 @@ public class PlayerStealthKill : MonoBehaviour
 
         _playerMovement.SetMovementLocked(false);
         _currentTarget = null;
+
     }
     public void EquipKatanaWeapon()
     {
