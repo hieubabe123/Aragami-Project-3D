@@ -22,6 +22,23 @@ public partial class UserData
         set => SetFloat("TouchSensitivity", value);
     }
 
+    public static int CurrentMap
+    {
+        get => GetInt("CurrentMap", 1);
+        set => SetInt("CurrentMap", value);
+    }
+
+    public static List<int> CompletedMaps
+    {
+        get => GetList<int>("CompletedMaps");
+        set => SetList("CompletedMaps", value);
+    }
+
+    public static bool IsMapCompleted(int mapId)
+    {
+        return CompletedMaps.Contains(mapId);
+    }
+
 }
 
 

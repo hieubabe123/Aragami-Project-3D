@@ -209,6 +209,7 @@ public class PlayerMovement : MonoBehaviour
         if (isDead) return;
 
         isDead = true;
+        EventDispatcher.Dispatch<EventDefine.OnPlayerDead>();
         DissolvingControllerTut dissolveVfx = GetComponent<DissolvingControllerTut>();
         StartCoroutine(dissolveVfx.DissolveCo(_dissolveDeadDuration));
         _rb.linearVelocity = Vector3.zero;

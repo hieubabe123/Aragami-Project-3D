@@ -3,20 +3,13 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-public class SceneLoader : MonoBehaviour
+public class SceneLoader : SingletonDontDestroy<SceneLoader>
 {
     [SerializeField] private Animator screenAnimator;
     [SerializeField] private Image cover;
 
     private bool isFading = false;
     private Coroutine sceneLoadCoroutine;
-
-    [Header("------------------- Time Interaction -------------------")]
-    [SerializeField] private float maxTimeToCheckInteraction = 30f;
-    [SerializeField] private float maxTimeToCheckActiveGame = 180f;
-    private float inactivityTimer = 0f;
-    private float activeGameTimer = 0f;
-
     private void Start()
     {
         EventDispatcher.AddListener<EventDefine.OnChangeScene>(HandleSceneChange);

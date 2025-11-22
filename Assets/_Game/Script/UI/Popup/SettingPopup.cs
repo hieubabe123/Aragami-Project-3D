@@ -13,7 +13,6 @@ public class SettingPopup : Frame
     [SerializeField] Toggle soundToggle;
     [SerializeField] Toggle musicToggle;
     [SerializeField] Toggle vibrationToggle;
-    [SerializeField] Slider touchSensitivitySlider;
     #endregion
 
     #region  Field
@@ -23,10 +22,6 @@ public class SettingPopup : Frame
         soundToggle.isOn = SFX.Instance.SoundEnable;
         musicToggle.isOn = SFX.Instance.MusicEnable;
         vibrationToggle.isOn = SFX.Instance.VibrateEnable;
-        if (touchSensitivitySlider != null)
-        {
-            touchSensitivitySlider.value = UserData.touchSensitivity;
-        }
 
     }
     #endregion
@@ -59,8 +54,6 @@ public class SettingPopup : Frame
     #region  Func
     public void OnCloseClick()
     {
-        // if (GameCtrl.Instance.Playing) this.Dispatch(new EventDefine.OnGamePause { isPaused = false });
-        // this.Hide();
         EventDispatcher.Dispatch(new EventDefine.OnPause() { IsPause = false });
         PopupManager.Instance.HideCurrent();
         Debug.Log("Close Setting Popup");

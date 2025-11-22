@@ -1,0 +1,102 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4a05cab8a9a88d848a7b2f3f9c05542f, type: 3}
+  m_Name: GameSoundData
+  m_EditorClassIdentifier: 
+  HomeBackground: {fileID: 0}
+  DalganoBackground: {fileID: 0}
+  GlassBrigdeBackground: {fileID: 0}
+  LightOffBackground: {fileID: 0}
+  LobbyBackground: {fileID: 0}
+  PassOrDieBackground: {fileID: 0}
+  SixLegBackground: {fileID: 0}
+  SquidGameBackground: {fileID: 0}
+  GreenLightBackground: {fileID: 0}
+  RockPaperBackground: {fileID: 0}
+  DontWakeUpBackground: {fileID: 0}
+  ButtonClick: {fileID: 8300000, guid: 34ff3c8af78dc9a408a44731de98a766, type: 3}
+  HoldingPet: {fileID: 0}
+  EarthImpact: {fileID: 0}
+  FireballExplosion: {fileID: 0}
+  GrenadeExplosion: {fileID: 0}
+  Carousel: {fileID: 0}
+  RedLight: {fileID: 0}
+  GreenLight: {fileID: 0}
+  Home: {fileID: 0}
+  GunMisfire: {fileID: 0}
+  PistolShot: {fileID: 0}
+  PlayerDeath1: {fileID: 0}
+  PlayerDeath2: {fileID: 0}
+  PlayerDeath3: {fileID: 0}
+  PlayerFall1: {fileID: 0}
+  PlayerFall2: {fileID: 0}
+  PlayerFall3: {fileID: 0}
+  PlayerFall4: {fileID: 0}
+  RevolverSpin: {fileID: 0}
+  BallFalling: {fileID: 0}
+  BladeBall_AttackBall: {fileID: 0}
+  BladeBall_Slash: {fileID: 0}
+  BladeBall_Solo: {fileID: 0}
+  CandyCrack1: {fileID: 0}
+  CandyCrack2: {fileID: 0}
+  CandyCrack3: {fileID: 0}
+  CharacterDie: {fileID: 0}
+  CharacterFootsteps: {fileID: 0}
+  CharacterJump: {fileID: 0}
+  Checkpoint: {fileID: 0}
+  CoinDrop: {fileID: 0}
+  CountDown: {fileID: 0}
+  DollRotation: {fileID: 0}
+  GetPoint: {fileID: 0}
+  LightOff: {fileID: 0}
+  LoseMinigame: {fileID: 0}
+  NextGate: {fileID: 0}
+  PickWeapon: {fileID: 0}
+  PigBreak: {fileID: 0}
+  PlatformFade1: {fileID: 0}
+  PlatformFade2: {fileID: 0}
+  PlatformFade3: {fileID: 0}
+  PlatformFade4: {fileID: 0}
+  PlatformFade5: {fileID: 0}
+  PlatformFade6: {fileID: 0}
+  PlatformFade7: {fileID: 0}
+  PlatformFade8: {fileID: 0}
+  PlatformGlassBroken1: {fileID: 0}
+  PlatformGlassBroken1_0: {fileID: 0}
+  PlatformGlassBroken2: {fileID: 0}
+  PlatformGlassBroken2_0: {fileID: 0}
+  PlatformGlassBroken3: {fileID: 0}
+  PlatformGlassBroken3_0: {fileID: 0}
+  PlatformGlassBroken4: {fileID: 0}
+  PlatformGlassBroken4_0: {fileID: 0}
+  ReadLightGreenLightCountdown: {fileID: 0}
+  Shoot1: {fileID: 0}
+  Shoot1_0: {fileID: 0}
+  Shoot2: {fileID: 0}
+  Shoot2_0: {fileID: 0}
+  Slash: {fileID: 0}
+  Smash: {fileID: 0}
+  SmashLight: {fileID: 0}
+  Spin: {fileID: 0}
+  Stab: {fileID: 0}
+  ThrowBall: {fileID: 0}
+  TugTap: {fileID: 0}
+  Victory: {fileID: 0}
+  TugVoice: {fileID: 0}
+  WinMinigame: {fileID: 0}
+  WinVoice: {fileID: 0}
+  Rust: {fileID: 0}
+  Throw: {fileID: 0}
+  Spawn: {fileID: 0}
+  Coin: {fileID: 0}
+  Alert: {fileID: 0}
+  PickupPet: {fileID: 0}

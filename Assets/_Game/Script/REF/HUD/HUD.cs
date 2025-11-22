@@ -228,10 +228,6 @@ public abstract class HUD<K> : SingletonMonoBehaviour<K> where K : MonoBehaviour
 
     private void Update()
     {
-        if (!IsBusy && Input.GetKeyUp(KeyCode.Escape))
-        {
-            OnBack();
-        }
     }
 }
 
